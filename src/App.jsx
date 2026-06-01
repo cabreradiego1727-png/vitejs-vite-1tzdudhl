@@ -2,99 +2,125 @@ import { useEffect, useState } from 'react';
 import './App.css';
 
 function App() {
-  const [modo, setModo] = useState('cesar');
-  const [texto, setTexto] = useState('');
-  const [textoCifrado, setTextoCifrado] = useState('');
-  const [Desifrado, setDesifrado] = useState(false);
+  const [modo, setModo] = useState('cesar'); // Modo de cifrado seleccionado
+  const [texto, setTexto] = useState(''); // Texto a cifrar/descifrar
+  const [textoCifrado, setTextoCifrado] = useState(''); // Resultado
+  const [Desifrado, setDesifrado] = useState(false); // Estado: cifrar o descifrar
+  const [alfabeto, setAlfabeto] = useState("abcdefghijklmnñopqrstuvwxyz"); // Alfabeto dinámico
+  const [desplazamiento, setDesplazamiento] = useState(3); // Desplazamiento configurable
+
+  // Función César
+  function cesar(texto, caracteres, descifrar = false, shift = 3) {
+    let resultado = [];
+    for (const l of texto.toLowerCase()) {
+      const indice = caracteres.indexOf(l);
+      if (indice > -1) {
+        let nuevoIndice = descifrar
+          ? (indice - shift + caracteres.length) % caracteres.length
+          : (indice + shift) % caracteres.length;
+        resultado.push(caracteres[nuevoIndice]);
+      } else {
+        resultado.push(l);
+      }
+    }
+    return resultado.join('');
+  }
+
+  // Función Atbash
+  function atbash(texto, caracteres) {
+    let resultado = [];
+    for (const l of texto.toLowerCase()) {
+      const indice = caracteres.indexOf(l);
+      if (indice > -1) {
+        resultado.push(caracteres[caracteres.length - indice - 1]);
+      } else {
+        resultado.push(l);
+      }
+    }
+    return resultado.join('');
+  }
+
+  // Detección automática en descifrado
+  function detectarCifrado(texto, caracteres, shift) {
+    const resultadoCesar = cesar(texto, caracteres, true, shift);
+    const resultadoAtbash = atbash(texto, caracteres);
+
+    // Heurística simple: elegir el que tenga más vocales
+    const contarVocales = (t) => (t.match(/[aeiou]/g) || []).length;
+
+    return contarVocales(resultadoCesar) > contarVocales(resultadoAtbash)
+      ? { modo: "cesar", texto: resultadoCesar }
+      : { modo: "atbash", texto: resultadoAtbash };
+  }
 
   useEffect(() => {
-    console.log(modo, texto);
+    const caracteres = alfabeto.split('');
 
-    let letras = texto.split('').map((l) => l.toLowerCase());
-    let resultado = [];
-
-    // CLAVE DEL CESAR
-    const desplazamiento = 3;
-
-    // =========================
-    // ATBASH
-    // =========================
-    if (modo === 'Atbash') {
-      for (const l of letras) {
-        const indice = alfabeto.indexOf(l);
-
-        if (indice > -1) {
-          // Atbash funciona igual para cifrar y descifrar
-          resultado.push(alfabeto[alfabeto.length - indice - 1]);
-        } else {
-          resultado.push(l);
-        }
+    if (Desifrado) {
+      // En descifrado se detecta automáticamente
+      const resultado = detectarCifrado(texto, caracteres, desplazamiento);
+      setTextoCifrado(resultado.texto);
+      setModo(resultado.modo);
+    } else {
+      // En cifrado se usa el modo seleccionado
+      if (modo === 'cesar') {
+        setTextoCifrado(cesar(texto, caracteres, false, desplazamiento));
+      } else {
+        setTextoCifrado(atbash(texto, caracteres));
       }
     }
-
-    // =========================
-    // CESAR
-    // =========================
-    if (modo === 'cesar') {
-      for (const l of letras) {
-        const indice = alfabeto.indexOf(l);
-
-        if (indice > -1) {
-          let nuevoIndice;
-
-          // DESCIFRAR
-          if (Desifrado) {
-            nuevoIndice =
-              (indice - desplazamiento + alfabeto.length) % alfabeto.length;
-          }
-          // CIFRAR
-          else {
-            nuevoIndice = (indice + desplazamiento) % alfabeto.length;
-          }
-
-          resultado.push(alfabeto[nuevoIndice]);
-        } else {
-          resultado.push(l);
-        }
-      }
-    }
-
-    setTextoCifrado(resultado.join(''));
-  }, [texto, modo, Desifrado]);
+  }, [texto, modo, Desifrado, alfabeto, desplazamiento]);
 
   return (
     <>
       <section id="center">
-        {/* CIFRAR O DESCIFRAR */}
+        {/* Selección: cifrar o descifrar */}
         <select
           name="cifrado"
           id="cifrado"
-          onChange={(v) => {
-            setDesifrado(v.target.value === 'decifrar');
-          }}
+          onChange={(v) => setDesifrado(v.target.value === 'decifrar')}
           value={Desifrado ? 'decifrar' : 'cifrar'}
         >
           <option value="cifrar">cifrar</option>
           <option value="decifrar">decifrar</option>
         </select>
 
-        {/* MODO */}
+        {/* Selección de modo (solo se usa en cifrado) */}
         <select
           name="modo"
           id="modo"
-          onChange={(v) => {
-            setModo(v.target.value);
-          }}
+          onChange={(v) => setModo(v.target.value)}
           value={modo}
+          disabled={Desifrado} // En descifrado se detecta automáticamente
         >
           <option value="cesar">cesar</option>
-          <option value="Atbash">Atbash</option>
+          <option value="atbash">atbash</option>
         </select>
 
-        {/* TEXTO */}
-        <textarea value={texto} onChange={(v) => setTexto(v.target.value)} />
+        {/* Input para conjunto de caracteres */}
+        <textarea
+          value={alfabeto}
+          onChange={(v) => setAlfabeto(v.target.value)}
+          placeholder="Ingresa el conjunto de caracteres"
+        />
 
-        {/* RESULTADO */}
+        {/* Input para desplazamiento (solo aplica en César) */}
+        <input
+          type="number"
+          value={desplazamiento}
+          onChange={(v) => setDesplazamiento(Number(v.target.value))}
+          placeholder="Desplazamiento César"
+          disabled={modo !== 'cesar'}
+        />
+
+        {/* Texto a cifrar/descifrar */}
+        <textarea
+          value={texto}
+          onChange={(v) => setTexto(v.target.value)}
+          placeholder="Ingresa el texto"
+        />
+
+        {/* Resultado */}
         <h2>{textoCifrado}</h2>
       </section>
     </>
