@@ -10,7 +10,6 @@ function App() {
   const [desplazamiento, setDesplazamiento] = useState(3);
   const [infoDescifrado, setInfoDescifrado] = useState(null);
 
-  // ─── Cifradores ──────────────────────────────────────────────────────
   function cesar(texto, caracteres, descifrar = false, shift = 3) {
     let resultado = [];
     for (const l of texto.toLowerCase()) {
@@ -40,11 +39,6 @@ function App() {
     return resultado.join('');
   }
 
-  // ─── Scoring "¿parece español?" ──────────────────────────────────────
-  // Cada patrón aporta evidencia según lo distintivo que sea:
-  //   palabras completas (entre espacios) -> evidencia fuerte
-  //   trigramas frecuentes                -> evidencia media
-  //   bigramas frecuentes                 -> evidencia ligera
   const PATRONES = [
     ...[" de ", " la ", " que ", " el ", " en ", " los ", " las ", " por ",
         " con ", " una ", " para ", " como ", " pero ", " del ", " se ",
@@ -56,8 +50,6 @@ function App() {
         "on", "al", "an", "ci", "do", "ta", "to", "co", "nt"].map((p) => ({ p, peso: 1 })),
   ];
 
-  // Cuenta ocurrencias permitiendo que dos palabras compartan el espacio
-  // intermedio (por eso avanzamos i + 1 y no i + patron.length).
   function contar(texto, patron) {
     let n = 0;
     let i = texto.indexOf(patron);
@@ -69,7 +61,6 @@ function App() {
   }
 
   function puntuarEspanol(texto) {
-    // Espacios al inicio/fin para poder detectar la primera y última palabra.
     const t = ` ${texto.toLowerCase()} `;
     let puntos = 0;
     for (const { p, peso } of PATRONES) {
@@ -78,11 +69,9 @@ function App() {
     return puntos;
   }
 
-  // ─── Detección automática ────────────────────────────────────────────
   function detectarCifrado(texto, caracteres) {
     const candidatos = [];
 
-    // 1) Atbash: un único candidato (no tiene "módulo")
     const resAtbash = atbash(texto, caracteres);
     candidatos.push({
       modo: "atbash",
@@ -91,7 +80,6 @@ function App() {
       puntos: puntuarEspanol(resAtbash),
     });
 
-    // 2) César: probar todos los desplazamientos posibles del alfabeto
     for (let shift = 1; shift < caracteres.length; shift++) {
       const resCesar = cesar(texto, caracteres, true, shift);
       candidatos.push({
@@ -102,7 +90,6 @@ function App() {
       });
     }
 
-    // El candidato con más evidencia de español gana
     candidatos.sort((a, b) => b.puntos - a.puntos);
     return { ...candidatos[0], candidatos: candidatos.slice(0, 3) };
   }
@@ -111,13 +98,11 @@ function App() {
     const caracteres = alfabeto.split('');
 
     if (Desifrado) {
-      // En descifrado se detecta automáticamente
       const resultado = detectarCifrado(texto, caracteres);
       setTextoCifrado(resultado.texto);
       setModo(resultado.modo);
       setInfoDescifrado(resultado);
     } else {
-      // En cifrado se usa el modo seleccionado
       if (modo === 'cesar') {
         const resultado = cesar(texto, caracteres, false, desplazamiento);
         setTextoCifrado(resultado);
@@ -133,7 +118,7 @@ function App() {
   return (
     <>
       <section id="center">
-        {/* Selección: cifrar o descifrar */}
+        {/* Selección: ci o dci */}
         <select
           name="cifrado"
           id="cifrado"
@@ -144,7 +129,7 @@ function App() {
           <option value="decifrar">decifrar</option>
         </select>
 
-        {/* Selección de modo (solo se usa en cifrado) */}
+        {/* Selección de modo */}
         <select
           name="modo"
           id="modo"
@@ -156,14 +141,14 @@ function App() {
           <option value="atbash">atbash</option>
         </select>
 
-        {/* Input para conjunto de caracteres */}
+        {/* Input ca */}
         <textarea
           value={alfabeto}
           onChange={(v) => setAlfabeto(v.target.value)}
           placeholder="Ingresa el conjunto de caracteres"
         />
 
-        {/* Input para desplazamiento (solo aplica en César) */}
+        {/* Input ce */}
         <input
           type="number"
           value={desplazamiento}
@@ -172,7 +157,7 @@ function App() {
           disabled={modo !== 'cesar' || Desifrado}
         />
 
-        {/* Texto a cifrar/descifrar */}
+        {/* Texto a ci/dci */}
         <textarea
           value={texto}
           onChange={(v) => setTexto(v.target.value)}
@@ -182,7 +167,7 @@ function App() {
         {/* Resultado */}
         <h2>Resultado: {textoCifrado}</h2>
 
-        {/* Información adicional */}
+        {/* Información  */}
         {infoDescifrado && (
           <div>
             <p>
@@ -195,8 +180,7 @@ function App() {
               )}
             </p>
 
-            {/* Top 3 candidatos (solo en modo descifrar) para ver qué tan
-                seguro estuvo el resultado frente al segundo lugar */}
+            {/* */}
             {infoDescifrado.candidatos && (
               <ol>
                 {infoDescifrado.candidatos.map((c, idx) => (
