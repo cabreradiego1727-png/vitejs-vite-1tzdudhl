@@ -12,7 +12,7 @@ function App() {
 
   function cesar(texto, caracteres, descifrar = false, shift = 3) {
     let resultado = [];
-    for (const l of texto.toLowerCase()) {
+    for (const l of texto) {
       const indice = caracteres.indexOf(l);
       if (indice > -1) {
         let nuevoIndice = descifrar
